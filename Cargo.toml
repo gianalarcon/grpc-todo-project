@@ -10,7 +10,7 @@ prost = "*"
 tonic = "*"
 tonic-reflection = "*"
 futures = "*"
-tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "*", features = ["macros", "rt-multi-thread"] }
 tokio-stream = { version = "*", features = ["net"] }
 
 [build-dependencies]

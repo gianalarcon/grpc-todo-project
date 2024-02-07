@@ -8,6 +8,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_server(true)
         .file_descriptor_set_path(out_dir.join("todos_descriptor.bin"))
         .out_dir("./src")
-        .compile(&[file_path], &["./proto"])?;
+        .compile(&[file_path], &["proto"])?;
     Ok(())
 }

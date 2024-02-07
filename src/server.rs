@@ -1,6 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
-
-use tokio::sync::Mutex;
+use futures::Stream;
+use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
+use tokio::sync::{mpsc, Mutex};
+use tokio_stream::wrappers::UnboundedReceiverStream;
 use tonic::{Request, Response, Status};
 
 use crate::{todos::Todo, todos_server::Todos, TodoChangeResponse};
@@ -108,5 +109,52 @@ impl Todos for TodoService {
             Some(todo) => Ok(Response::new(todo.clone())),
             None => Err(Status::not_found("ID not found")),
         }
+    }
+
+    #[doc = " Server streaming response type for the Watch method."]
+    type WatchStream = Pin<Box<dyn Stream<Item = Result<Todo, Status>> + Send>>;
+
+    #[doc = " Watches over a Todo by Identifier"]
+    #[must_use]
+    #[allow(clippy::type_complexity, clippy::type_repetition_in_bounds)]
+    async fn watch(
+        &self,
+        request: tonic::Request<super::TodoIdentifier>,
+    ) -> Result<Response<Self::WatchStream>, Status> {
+        let identifier = request.into_inner();
+        let map = self.todos.lock().await;
+        let mut previous_todo = match map.get(&identifier.id) {
+            Some(todo) => todo.clone(),
+            None => return Err(Status::not_found("Corresponding todo not found")),
+        };
+
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        let todos = self.todos.clone();
+
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(1)).await;
+
+                let map = todos.lock().await;
+
+                let new_todo = match map.get(&identifier.id) {
+                    Some(todo) => todo.clone(),
+                    None => {
+                        let _ = tx.send(Err(Status::not_found("Corresponding todo not found")));
+                        return;
+                    }
+                };
+
+                if new_todo != previous_todo {
+                    let _ = tx.send(Ok(new_todo.clone()));
+                    previous_todo = new_todo;
+                }
+            }
+        });
+
+        let stream = UnboundedReceiverStream::new(rx);
+
+        Ok(Response::new(Box::pin(stream) as Self::WatchStream))
     }
 }
