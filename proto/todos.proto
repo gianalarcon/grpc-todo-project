@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package todos;
+
+service Todos {
+    // Add to Todos
+    rpc Add(Todo) returns (TodoChangeResponse);
+
+    // Remove a todo
+    rpc Remove(TodoIdentifier) returns (TodoChangeResponse);
+
+    // Update status of a todo
+    rpc UpdateStatus(TodoStatusUpdateRequest) returns (TodoChangeResponse);
+
+    // Get a todo by Identifier
+    rpc Get(TodoIdentifier) returns (Todo);
+
+    // Watches over a Todo by Identifier
+    rpc Watch(TodoIdentifier) returns (stream Todo);
+}
+
+message TodoIdentifier {
+    uint32 id = 1;
+}
+
+message TodoChangeResponse {
+    TodoIdentifier id = 1;
+    string message = 2;
+}
+
+enum TodoStatus {
+    NEW = 0;
+    ONGOING = 1;
+    COMPLETED = 2;
+}
+
+message TodoStatusUpdateRequest {
+    TodoIdentifier id = 1;
+    TodoStatus status = 2;
+}
+
+message TodoDescriptor {
+    optional string descriptor = 1;
+    string title = 2;
+}
+
+message Todo {
+    TodoIdentifier id = 1;
+    TodoStatus status = 2;
+    TodoDescriptor todo = 3;
+}

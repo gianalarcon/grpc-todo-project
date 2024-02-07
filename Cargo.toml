@@ -1,0 +1,21 @@
+[package]
+name = "grpc_todo"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+prost = "*"
+tonic = "*"
+tonic-reflection = "*"
+futures = "*"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tokio-stream = { version = "*", features = ["net"] }
+
+[build-dependencies]
+tonic-build = "*"
+
+[dev-dependencies]
+futures-util = "*"
+anyhow = "*"
